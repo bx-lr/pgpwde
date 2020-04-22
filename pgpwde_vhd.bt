@@ -1,0 +1,263 @@
+//------------------------------------------------
+//--- 010 Editor v8.0.1 Binary Template
+//
+//      File: 
+//   Authors: 
+//   Version: 
+//   Purpose: 
+//  Category: 
+// File Mask: 
+//  ID Bytes: 
+//   History: 
+//------------------------------------------------
+
+
+#define SECTOR_SIZE 512
+#define PAD_SIZE (SECTOR_SIZE - sizeof(PGPdiskOnDiskUserInfoHeader))
+#define PGP_WDE_CHUNK_ESK 384
+#define PGP_WDE_RECORD_SALT_SIZE 16
+#define kPGPdiskMaxUserNameSize 127
+#define PGP_WDE_MAX_MAIN_ESK 256
+#define PGP_WDE_UUID_SIZE   16
+#define PGP_WDE_RECORD_SALT_SIZE 16
+
+
+typedef struct Sector_{
+    BYTE unk2[512];
+} Sector;
+
+typedef struct PGPdiskOnDiskUserInfoHeader_  {
+	WORD size;		
+	BYTE version;	
+	WORD type;	
+	DWORD magic;		
+	BYTE totalRecords;	
+	BYTE currentRecord;	
+	BYTE reserved[2];
+} PGPdiskOnDiskUserInfoHeader;
+
+
+typedef struct pgpDiskOnDiskUserWithSym_ {
+    WORD size;
+    BYTE symmAlg;
+    WORD totalESKsize;
+    BYTE reserved1[3];
+    BYTE userName[kPGPdiskMaxUserNameSize + 1];
+    BYTE s2ktype;
+    DWORD hashIterations;
+    BYTE reserved2[3];
+    BYTE salt[PGP_WDE_RECORD_SALT_SIZE];
+    BYTE esk[PGP_WDE_MAX_MAIN_ESK/2];
+} pgpDiskOnDiskUserWithSym;
+
+typedef struct pgpDiskOnDiskUserWithTokenPub_ {
+    WORD size;
+	BYTE pubAlg;
+	WORD totalESKsize;
+	WORD pubFlags;
+	BYTE reserved;
+	DWORD tokenID;
+	BYTE userName[kPGPdiskMaxUserNameSize + 1];
+	DWORD tokenKeyID;	
+	BYTE keyID[8];	
+	BYTE esk[PGP_WDE_MAX_MAIN_ESK];
+} pgpDiskOnDiskUserWithTokenPub;
+
+typedef struct pgpDiskOnDiskUserWithPub_  {
+	WORD size;
+	BYTE pubAlg;	
+	WORD totalESKsize;
+	WORD pubFlags;
+	BYTE reserved;
+	BYTE userName[kPGPdiskMaxUserNameSize + 1];	
+	BYTE keyID[8];	
+	BYTE esk[PGP_WDE_MAX_MAIN_ESK];
+} pgpDiskOnDiskUserWithPub;
+
+typedef struct pgpDiskOnDiskUserWithTpm_{
+	WORD size;	
+	WORD totalESKsize;
+	BYTE reserved[4];
+	BYTE userName[kPGPdiskMaxUserNameSize + 1];
+	BYTE esk[PGP_WDE_MAX_MAIN_ESK];
+} pgpDiskOnDiskUserWithTpm;
+
+typedef struct pgpDiskOnDiskSessionKeys_  {
+	WORD size;	
+	BYTE symmAlg;	
+    WORD totalESKsize;
+	BYTE reserved1[3];
+	BYTE diskID[kPGPdiskMaxUserNameSize + 1];	
+	BYTE uuid[PGP_WDE_UUID_SIZE];
+	BYTE s2ktype;	
+	DWORD hashIterations;	
+	BYTE diskBlockMode;
+	BYTE diskBlockModeOld;
+	BYTE reserved2;				
+	BYTE salt[PGP_WDE_RECORD_SALT_SIZE];
+	BYTE diskSalt[16];
+	BYTE diskSaltOld[16];
+	BYTE esk[PGP_WDE_MAX_MAIN_ESK/2];
+	BYTE eskOld[PGP_WDE_MAX_MAIN_ESK/2];	
+} pgpDiskOnDiskSessionKeys;
+
+typedef struct pgpDiskOnDiskLinkKey_{
+    WORD size;	
+	BYTE symmAlg;	
+	WORD totalESKsize;
+	BYTE reserved[3];
+	BYTE esk[PGP_WDE_MAX_MAIN_ESK/2];
+	BYTE anonymousESK[PGP_WDE_MAX_MAIN_ESK/2];	
+	BYTE uuid[PGP_WDE_UUID_SIZE];
+	BYTE offloadUuid[PGP_WDE_UUID_SIZE];
+	BYTE offloadStatus;
+	BYTE reserved_alt[3];
+} pgpDiskOnDiskLinkKey;
+
+
+typedef struct pgpDiskOnDiskUserInfoMain_{
+    WORD userFlags;
+    DWORD serialNumber;
+    WORD userLocalId;
+    BYTE reserved[3*2];
+    union Unknown_{
+        pgpDiskOnDiskUserWithSym symmUser;
+        pgpDiskOnDiskUserWithTokenPub tokenUser;
+        pgpDiskOnDiskUserWithPub pubUser;
+        pgpDiskOnDiskUserWithTpm tpmUser;
+        pgpDiskOnDiskSessionKeys sessionKeys;
+        pgpDiskOnDiskLinkKey linkKey;
+    } Unknown;
+    
+} pgpDiskOnDiskUserInfoMain;
+
+typedef struct pgpDiskOnDiskUserInfoSecondary_ {
+	DWORD reserved;	
+	BYTE eskChunk[PGP_WDE_CHUNK_ESK];	
+} pgpDiskOnDiskUserInfoSecondary;
+
+
+typedef struct {
+    WORD size;
+    BYTE version;
+    BYTE type;
+    DWORD magic;
+    BYTE totalRecords;
+    BYTE currentRecord;
+    BYTE reserved[2];
+    //BYTE unk[500];
+    pgpDiskOnDiskUserInfoMain main;
+    pgpDiskOnDiskUserInfoSecondary secondary;
+    /* needed to make sure that PGPdiskOnDiskUserInfo is sector aligned */
+    BYTE asOctets[PAD_SIZE];
+} HDR_1;
+
+typedef struct {
+    WORD size;
+    BYTE version;
+    BYTE type;
+    DWORD magic;
+    BYTE totalRecords;
+    BYTE currentRecord;
+    BYTE reserved[2];
+    BYTE unk[500];
+} HDR_2;
+
+
+typedef struct {
+    WORD userFlags;
+    DWORD serialNumber;
+    WORD localID;
+    BYTE reserved[6];
+} INFO_MAIN;
+
+typedef struct {
+    WORD size;
+    BYTE symmAlg;
+    WORD totalESKsize;
+    BYTE reserved1[3];
+    BYTE userName[128];
+    BYTE s2ktype;
+    DWORD hashIterations;
+    BYTE reserved2[3];
+    BYTE salt[16];
+    BYTE esk[totalESKsize+4];
+}USER_SYMM;
+
+
+typedef struct {
+    WORD size;
+    BYTE version;
+    BYTE type;
+    DWORD magic;
+    BYTE totalRecords;
+    BYTE currentRecord;
+    BYTE reserved[2];
+    INFO_MAIN infoMain;
+    USER_SYMM userSymm;
+} HDR_8;
+
+typedef struct {
+    WORD size;
+    BYTE version;
+    BYTE type;
+    DWORD magic;
+    BYTE totalRecords;
+    BYTE currentRecord;
+    BYTE reserved[2];
+    DWORD unknown;
+    DWORD encrypted_start_offset_maybe;
+    DWORD unknown2;
+    WORD unknown3;
+    WORD len;
+    BYTE unknown4[22];
+    BYTE userName[128];
+    //BYTE u_s2ktype;
+    WORD u_noIdea;
+    WORD u_noIdea2;
+    BYTE blob[32];
+    BYTE nulls[32];
+    BYTE blob2[128];
+} HDR_12;
+
+local int64 fLen =  FileSize()/512;
+Printf("file len = %d\n", fLen); 
+
+local int i = 0;
+local uchar buf[512];
+local int types[fLen];
+while (i < fLen - 1){
+    FSeek(i*512);
+    ReadBytes(buf, i*512, 512);
+    if (buf[4] == 0x00 && buf[5] == 0x69 && buf[6] == 0x44 && buf[7] == 0x57){
+        //Printf("offset: %16x\n", i*512);
+        //types[i] = 1;
+        if (buf[3] == 0x01){
+            SetBackColor(cRed);
+            HDR_1 hdr_1;
+            SetBackColor(cNone);        
+        }
+        else if (buf[3] == 0x02){
+            SetBackColor(cGreen);
+            HDR_2 hdr_2;
+            SetBackColor(cNone);
+        }
+        else if (buf[3] == 0x08){
+            SetBackColor(cWhite);
+            HDR_8 hdr_8;
+            SetBackColor(cNone);
+        }
+        else if (buf[3] == 0x0c){
+            SetBackColor(cYellow);
+            HDR_12 hdr_12;
+            SetBackColor(cNone);
+        }
+        else {
+            SetBackColor(cBlue);
+            Sector sec;
+            SetBackColor(cNone);
+        }
+    }
+//    Printf("buf %02x %02x %02x %02x %02x %02x %02x %02x\n", buf[0], buf[1], buf[2], buf[3], buf[4], buf[5], buf[6], buf[7]);
+    i += 1;
+}
